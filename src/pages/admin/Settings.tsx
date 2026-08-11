@@ -1000,20 +1000,21 @@ export default function AdminSettings() {
                       jdbc_string: settings.mysql_jdbc_string
                     })
                   });
-                  const contentType = res.headers.get('content-type') || '';
-                  let json: any = {};
-                  if (contentType.includes('application/json')) {
-                    json = await res.json().catch(() => ({}));
-                  } else {
-                    const rawText = await res.text().catch(() => '');
-                    throw new Error(`Server returned invalid response (${res.status}). ${rawText.startsWith('<') ? 'HTML error page received.' : rawText.slice(0, 100)}`);
+                  const rawText = await res.text().catch(() => '');
+                  let json: any = null;
+                  try {
+                    json = JSON.parse(rawText);
+                  } catch {
+                    json = null;
                   }
-                  if (res.ok && json.success) {
+
+                  if (res.ok && json && json.success) {
                     setTestStatus({ success: true, message: json.message });
                     setNotification({ message: json.message, type: 'success' });
                   } else {
-                    setTestStatus({ success: false, message: json.error || 'Connection failed.' });
-                    setNotification({ message: json.error || 'Connection failed.', type: 'error' });
+                    const errMsg = json?.error || json?.message || 'MySQL connection test failed.';
+                    setTestStatus({ success: false, message: errMsg });
+                    setNotification({ message: errMsg, type: 'error' });
                   }
                 } catch (err: any) {
                   setTestStatus({ success: false, message: err.message || 'Connection test failed.' });

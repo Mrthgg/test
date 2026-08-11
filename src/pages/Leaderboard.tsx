@@ -33,23 +33,25 @@ export default function Leaderboard() {
     setError(null);
     try {
       const res = await fetch(`/api/leaderboard/${metric}?limit=${currentLimit}`);
-      const contentType = res.headers.get('content-type') || '';
-      let json: any = {};
-      if (contentType.includes('application/json')) {
-        json = await res.json().catch(() => ({}));
-      } else {
-        const rawText = await res.text().catch(() => '');
-        throw new Error(`Server returned invalid response (${res.status}). ${rawText.startsWith('<') ? 'HTML response received.' : rawText.slice(0, 100)}`);
+      const rawText = await res.text().catch(() => '');
+      let json: any = null;
+      try {
+        json = JSON.parse(rawText);
+      } catch {
+        json = null;
       }
 
-      if (res.ok) {
+      if (res.ok && json) {
         setData(json.data || []);
         setConnected(json.connected || false);
+      } else if (json && json.error) {
+        setError(json.error);
       } else {
-        setError(json.error || 'Failed to fetch leaderboard data.');
+        setData([]);
+        setConnected(false);
       }
     } catch (err: any) {
-      setError(err.message || 'Network error fetching leaderboards.');
+      setError('Network error fetching leaderboards.');
     } finally {
       setLoading(false);
     }

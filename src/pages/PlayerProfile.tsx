@@ -49,22 +49,23 @@ export default function PlayerProfile() {
     setError(null);
     try {
       const res = await fetch(`/api/player/${encodeURIComponent(targetUser)}`);
-      const contentType = res.headers.get('content-type') || '';
-      let json: any = {};
-      if (contentType.includes('application/json')) {
-        json = await res.json().catch(() => ({}));
-      } else {
-        const rawText = await res.text().catch(() => '');
-        throw new Error(`Server returned invalid response (${res.status}). ${rawText.startsWith('<') ? 'HTML response received.' : rawText.slice(0, 100)}`);
+      const rawText = await res.text().catch(() => '');
+      let json: any = null;
+      try {
+        json = JSON.parse(rawText);
+      } catch {
+        json = null;
       }
 
-      if (res.ok) {
+      if (res.ok && json) {
         setPlayerData(json);
+      } else if (json && json.error) {
+        setError(json.error);
       } else {
-        setError(json.error || 'Failed to load player profile');
+        setError(`Unable to load profile data for player "${targetUser}".`);
       }
     } catch (err: any) {
-      setError(err.message || 'Error connecting to server');
+      setError('Error connecting to server.');
     } finally {
       setLoading(false);
     }
