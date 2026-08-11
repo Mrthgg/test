@@ -849,9 +849,17 @@ export default function AdminSettings() {
           <div>
             <h2 className="text-xl font-bold text-white flex items-center space-x-2">
               <span className="w-3 h-3 rounded-full bg-cyan-500 inline-block"></span>
-              <span>Minecraft Database Settings (ajLeaderboards MySQL)</span>
+              <span>Leaderboard MySQL Database (ajLeaderboards)</span>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                Leaderboard Only
+              </span>
             </h2>
-            <p className="text-xs text-slate-400 mt-1">Configure your MySQL database connection (e.g. Pterodactyl / NyctoHost) to stream live leaderboards.</p>
+            <p className="text-xs text-slate-400 mt-1">
+              Connect your MySQL database (e.g., NyctoHost / Pterodactyl) to stream live player rankings.
+              <span className="text-purple-400 font-semibold ml-1">
+                Note: MySQL is strictly used for the Leaderboard. The full store website operates on the main database.
+              </span>
+            </p>
           </div>
           <button
             onClick={saveSettings}

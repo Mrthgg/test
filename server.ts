@@ -57,12 +57,12 @@ const defaultSettings = [
     rules_bg_url: '',
     rules_border_color: '#9333ea',
     discord_order_webhook: '',
-    mysql_host: '',
+    mysql_host: 'lemon.nyctohost.com:3306',
     mysql_port: '3306',
-    mysql_database: '',
-    mysql_user: '',
-    mysql_password: '',
-    mysql_jdbc_string: ''
+    mysql_database: 's168_Two',
+    mysql_user: 'u168_50U0Rj2EOa',
+    mysql_password: 'm@gOsxCyU2.=DaCka@THfhcf',
+    mysql_jdbc_string: 'jdbc:mysql://u168_50U0Rj2EOa:m@gOsxCyU2.=DaCka@THfhcf@lemon.nyctohost.com:3306/s168_Two'
   }
 ];
 
@@ -160,6 +160,26 @@ function initializeDatabase() {
     seedIfMissing("categories", defaultCategories);
     seedIfMissing("products", defaultProducts);
     seedIfMissing("settings", defaultSettings);
+
+    // Populate or update global settings with MySQL configuration if blank
+    if (Array.isArray(dbData.settings)) {
+      const globalSettingIndex = dbData.settings.findIndex((s: any) => s.id === 'global');
+      if (globalSettingIndex !== -1) {
+        const gs = dbData.settings[globalSettingIndex];
+        if (!gs.mysql_host || !gs.mysql_database || !gs.mysql_user) {
+          dbData.settings[globalSettingIndex] = {
+            ...gs,
+            mysql_host: 'lemon.nyctohost.com:3306',
+            mysql_port: '3306',
+            mysql_database: 's168_Two',
+            mysql_user: 'u168_50U0Rj2EOa',
+            mysql_password: 'm@gOsxCyU2.=DaCka@THfhcf',
+            mysql_jdbc_string: 'jdbc:mysql://u168_50U0Rj2EOa:m@gOsxCyU2.=DaCka@THfhcf@lemon.nyctohost.com:3306/s168_Two'
+          };
+          console.log("Updated global MySQL settings in vortex_store.json");
+        }
+      }
+    }
     seedIfMissing("rules", defaultRules);
     seedIfMissing("news", defaultNews);
     seedIfMissing("vote_links", defaultVoteLinks);
@@ -692,11 +712,11 @@ app.get("/db-check", async (req, res) => {
     const settingsColl = await getCollection('settings');
     const globalSettings = settingsColl.find((s: any) => s.id === 'global') || {};
     
-    const host = globalSettings.mysql_host;
-    const port = globalSettings.mysql_port || '3306';
-    const database = globalSettings.mysql_database;
-    const user = globalSettings.mysql_user;
-    const password = globalSettings.mysql_password;
+    const host = globalSettings.mysql_host || process.env.MYSQL_HOST;
+    const port = globalSettings.mysql_port || process.env.MYSQL_PORT || '3306';
+    const database = globalSettings.mysql_database || process.env.MYSQL_DATABASE;
+    const user = globalSettings.mysql_user || process.env.MYSQL_USER;
+    const password = globalSettings.mysql_password || process.env.MYSQL_PASSWORD;
 
     if (!host || !database || !user) {
       return res.send(`
@@ -849,11 +869,11 @@ app.get("/api/leaderboard/:metric", async (req, res) => {
     const settingsColl = await getCollection('settings');
     const globalSettings = settingsColl.find((s: any) => s.id === 'global') || {};
     
-    const host = globalSettings.mysql_host;
-    const port = globalSettings.mysql_port || '3306';
-    const database = globalSettings.mysql_database;
-    const user = globalSettings.mysql_user;
-    const password = globalSettings.mysql_password;
+    const host = globalSettings.mysql_host || process.env.MYSQL_HOST;
+    const port = globalSettings.mysql_port || process.env.MYSQL_PORT || '3306';
+    const database = globalSettings.mysql_database || process.env.MYSQL_DATABASE;
+    const user = globalSettings.mysql_user || process.env.MYSQL_USER;
+    const password = globalSettings.mysql_password || process.env.MYSQL_PASSWORD;
 
     let mysqlData: any[] = [];
     let connected = false;
@@ -1028,11 +1048,11 @@ app.get("/api/player/:username", async (req, res) => {
 
     const settingsColl = await getCollection('settings');
     const globalSettings = settingsColl.find((s: any) => s.id === 'global') || {};
-    const host = globalSettings.mysql_host;
-    const database = globalSettings.mysql_database;
-    const user = globalSettings.mysql_user;
-    const password = globalSettings.mysql_password;
-    const port = globalSettings.mysql_port || '3306';
+    const host = globalSettings.mysql_host || process.env.MYSQL_HOST;
+    const database = globalSettings.mysql_database || process.env.MYSQL_DATABASE;
+    const user = globalSettings.mysql_user || process.env.MYSQL_USER;
+    const password = globalSettings.mysql_password || process.env.MYSQL_PASSWORD;
+    const port = globalSettings.mysql_port || process.env.MYSQL_PORT || '3306';
 
     if (host && database && user) {
       try {

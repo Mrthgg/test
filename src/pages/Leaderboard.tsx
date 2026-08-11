@@ -85,12 +85,18 @@ export default function Leaderboard() {
       
       <div className="max-w-5xl mx-auto relative z-10">
         {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-3">
+        <div className="text-center mb-10 space-y-3">
+          <div className="inline-flex items-center space-x-2 bg-slate-900/90 border border-slate-800 px-4 py-1.5 rounded-full text-xs font-semibold text-slate-300 backdrop-blur shadow-xl">
+            <span className={cn("w-2 h-2 rounded-full animate-pulse", connected ? "bg-emerald-400" : "bg-amber-400")} />
+            <span>{connected ? "Connected to MySQL ajLeaderboards" : "Leaderboard MySQL Data Stream"}</span>
+            <span className="text-slate-600">•</span>
+            <span className="text-purple-400 text-[11px] font-bold">Only Leaderboard uses MySQL</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white">
             SERVER <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">LEADERBOARD</span>
           </h1>
           <p className="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
-            See who dominates the network. Filter by stat type, view top players, and climb the ranks!
+            Live rankings fetched directly from your Minecraft MySQL database (ajLeaderboards).
           </p>
         </div>
 

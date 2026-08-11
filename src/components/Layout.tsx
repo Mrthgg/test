@@ -93,7 +93,6 @@ export default function Layout({ children }: Props) {
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Leaderboard', path: '/leaderboard' },
-    { name: 'Players', path: '/player' },
     { name: 'Staff', path: '/staff' },
     { name: 'Store', path: '/store' },
     { name: 'Patrons', path: '/patrons' },
