@@ -33,7 +33,15 @@ export default function Leaderboard() {
     setError(null);
     try {
       const res = await fetch(`/api/leaderboard/${metric}?limit=${currentLimit}`);
-      const json = await res.json();
+      const contentType = res.headers.get('content-type') || '';
+      let json: any = {};
+      if (contentType.includes('application/json')) {
+        json = await res.json().catch(() => ({}));
+      } else {
+        const rawText = await res.text().catch(() => '');
+        throw new Error(`Server returned invalid response (${res.status}). ${rawText.startsWith('<') ? 'HTML response received.' : rawText.slice(0, 100)}`);
+      }
+
       if (res.ok) {
         setData(json.data || []);
         setConnected(json.connected || false);

@@ -1000,7 +1000,14 @@ export default function AdminSettings() {
                       jdbc_string: settings.mysql_jdbc_string
                     })
                   });
-                  const json = await res.json();
+                  const contentType = res.headers.get('content-type') || '';
+                  let json: any = {};
+                  if (contentType.includes('application/json')) {
+                    json = await res.json().catch(() => ({}));
+                  } else {
+                    const rawText = await res.text().catch(() => '');
+                    throw new Error(`Server returned invalid response (${res.status}). ${rawText.startsWith('<') ? 'HTML error page received.' : rawText.slice(0, 100)}`);
+                  }
                   if (res.ok && json.success) {
                     setTestStatus({ success: true, message: json.message });
                     setNotification({ message: json.message, type: 'success' });

@@ -1108,6 +1108,18 @@ app.get("/api/player/:username", async (req, res) => {
   }
 });
 
+// Fallback JSON 404 handler for any unhandled /api/* endpoints
+app.all("/api/*", (req, res) => {
+  res.status(404).json({ error: `API endpoint ${req.path} not found` });
+});
+
+// Global JSON error handling middleware for API routes
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (req.path.startsWith('/api/')) {
+    return res.status(500).json({ error: err?.message || 'Internal Server Error' });
+  }
+  next(err);
+});
 
 // Serve static/compiled assets or mount Vite Dev Server
 async function boot() {
