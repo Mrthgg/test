@@ -27,7 +27,7 @@ export default function Home() {
         .from('settings')
         .select('*')
         .eq('id', 'global')
-        .single();
+        .maybeSingle();
       
       if (settingsData) setSettings(settingsData as Settings);
     };

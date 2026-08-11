@@ -40,7 +40,7 @@ export default function ProductDetail() {
           .from('products')
           .select('*')
           .eq('id', id)
-          .single();
+          .maybeSingle();
 
         if (productErr || !productData) {
           console.error('Error fetching product:', productErr);
@@ -58,7 +58,7 @@ export default function ProductDetail() {
             .from('categories')
             .select('*')
             .eq('id', prod.category_id)
-            .single();
+            .maybeSingle();
           
           if (categoryData) {
             setCategory(categoryData as Category);

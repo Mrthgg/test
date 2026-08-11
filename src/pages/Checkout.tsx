@@ -124,7 +124,7 @@ export default function Checkout() {
 
       // Send Discord Webhook
       try {
-        const { data: settings } = await supabase.from('settings').select('discord_order_webhook').single();
+        const { data: settings } = await supabase.from('settings').select('discord_order_webhook').eq('id', 'global').maybeSingle();
         if (settings?.discord_order_webhook) {
           const itemsList = cart.map(item => `- ${item.name} x${item.quantity}`).join('\n');
           const embed = {

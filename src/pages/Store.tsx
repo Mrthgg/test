@@ -45,7 +45,7 @@ export default function Store() {
         .from('settings')
         .select('*')
         .eq('id', 'global')
-        .single();
+        .maybeSingle();
       if (settingsData) setSettings(settingsData as Settings);
 
       // 3. Fetch real approved purchases for Top Customer & Recent Payments

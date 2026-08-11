@@ -21,7 +21,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .from('settings')
         .select('*')
         .eq('id', 'global')
-        .single();
+        .maybeSingle();
       
       if (data) {
         setSettings(data as Settings);

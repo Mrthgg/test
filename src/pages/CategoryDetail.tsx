@@ -45,7 +45,7 @@ export default function CategoryDetail() {
         .from('categories')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
       
       if (!catData) {
         // If not found, redirect to store
@@ -82,7 +82,7 @@ export default function CategoryDetail() {
         .from('settings')
         .select('*')
         .eq('id', 'global')
-        .single();
+        .maybeSingle();
       if (settingsData) setSettings(settingsData as Settings);
 
       setLoading(false);

@@ -70,7 +70,7 @@ export default function AdminOrders() {
             .from('products')
             .select('stock')
             .eq('id', item.productId)
-            .single();
+            .maybeSingle();
 
           if (product && product.stock !== -1) {
             const newStock = Math.max(0, product.stock - item.quantity);

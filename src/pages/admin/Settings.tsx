@@ -92,7 +92,7 @@ export default function AdminSettings() {
       .from('settings')
       .select('*')
       .eq('id', 'global')
-      .single();
+      .maybeSingle();
     
     if (settingsError) {
       console.error('Error fetching settings:', settingsError);

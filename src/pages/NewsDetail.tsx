@@ -27,7 +27,7 @@ export default function NewsDetail() {
       .from('news')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (error || !newsData) {
       console.error('Error fetching news:', error);
@@ -41,7 +41,7 @@ export default function NewsDetail() {
       .from('settings')
       .select('*')
       .eq('id', 'global')
-      .single();
+      .maybeSingle();
     if (settingsData) setSettings(settingsData as Settings);
 
     setLoading(false);
