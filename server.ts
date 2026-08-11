@@ -890,85 +890,41 @@ app.get("/api/leaderboard/:metric", async (req, res) => {
           connectTimeout: 4000
         });
 
-        // Determine candidate table names based on metric
-        let tableCandidates: string[] = [];
+        // 1. Inspect existing tables in database
+        const [tablesRes] = await connection.execute("SHOW TABLES");
+        const tables = (tablesRes as any[]).map(row => Object.values(row)[0] as string);
+
+        // 2. Find matching table for requested metric
+        let matchedTable: string | undefined;
         if (metric === 'playtime') {
-          tableCandidates = ['ajlb_statistic_hours_played', 'ajlb_hours', 'ajlb_playtime', 'ajleaderboards_statistic_hours_played', 'ajleaderboards_hours', 'ajleaderboards_playtime', 'ajlb_time'];
+          matchedTable = tables.find(t => t.includes('hours') || t.includes('playtime') || t.includes('time'));
         } else if (metric === 'kills') {
-          tableCandidates = ['ajlb_statistic_player_kills', 'ajlb_kills', 'ajleaderboards_statistic_player_kills', 'ajleaderboards_kills'];
+          matchedTable = tables.find(t => t.includes('kills'));
         } else if (metric === 'balance') {
-          tableCandidates = ['ajlb_vault_eco_balance', 'ajlb_money', 'ajlb_balance', 'ajleaderboards_vault_eco_balance', 'ajleaderboards_money', 'ajleaderboards_balance'];
+          matchedTable = tables.find(t => t.includes('balance') || t.includes('money') || t.includes('eco'));
         } else if (metric === 'deaths') {
-          tableCandidates = ['ajlb_statistic_deaths', 'ajlb_deaths', 'ajleaderboards_statistic_deaths', 'ajleaderboards_deaths'];
+          matchedTable = tables.find(t => t.includes('deaths'));
         } else {
-          tableCandidates = [`ajlb_${metric}`, `ajleaderboards_${metric}`];
+          matchedTable = tables.find(t => t.toLowerCase().includes(metric.toLowerCase()));
         }
 
-        const nameCols = ['name', 'namecache', 'username', 'player'];
-        const valueCols = ['value', 'score', 'kills', 'balance'];
-
-        let rows: any[] = [];
-        
-        // 1. Try with INNER JOIN ajlb_extras
-        for (const tbl of tableCandidates) {
-          if (rows.length > 0) break;
-          for (const nCol of nameCols) {
-            if (rows.length > 0) break;
-            for (const vCol of valueCols) {
-              try {
-                const [resRows] = await connection.execute(
-                  `SELECT e.\`${nCol}\` AS username, s.\`${vCol}\` AS value FROM \`${tbl}\` s INNER JOIN ajlb_extras e ON s.id = e.id ORDER BY s.\`${vCol}\` DESC LIMIT ?`,
-                  [limit]
-                );
-                const rList = resRows as any[];
-                if (rList && rList.length > 0) {
-                  rows = rList;
-                  console.log(`Successfully queried table ${tbl} JOIN ajlb_extras using ${nCol} and ${vCol}`);
-                  break;
-                }
-              } catch {
-                // Try next combination
-              }
-            }
-          }
-        }
-
-        // 2. Fallback to direct queries without join if join didn't yield results
-        if (rows.length === 0) {
-          for (const tbl of tableCandidates) {
-            if (rows.length > 0) break;
-            for (const nCol of nameCols) {
-              if (rows.length > 0) break;
-              for (const vCol of valueCols) {
-                try {
-                  const [resRows] = await connection.execute(
-                    `SELECT ?? AS username, ?? AS value FROM ?? ORDER BY ?? DESC LIMIT ?`,
-                    [nCol, vCol, tbl, vCol, limit]
-                  );
-                  const rList = resRows as any[];
-                  if (rList && rList.length > 0) {
-                    rows = rList;
-                    console.log(`Successfully queried table ${tbl} directly using columns ${nCol} and ${vCol}`);
-                    break;
-                  }
-                } catch {
-                  // Try next combination
-                }
-              }
-            }
+        if (matchedTable) {
+          const [rows] = await connection.execute(
+            `SELECT COALESCE(NULLIF(namecache, ''), NULLIF(displaynamecache, ''), id) AS username, CAST(value AS DECIMAL(20,2)) AS value FROM \`${matchedTable}\` ORDER BY CAST(value AS DECIMAL(20,2)) DESC LIMIT ?`,
+            [limit]
+          );
+          const rList = rows as any[];
+          if (rList && rList.length > 0) {
+            mysqlData = rList.map((r: any, idx: number) => ({
+              rank: idx + 1,
+              username: r.username || `Player${idx + 1}`,
+              value: Number(r.value || 0)
+            }));
+            connected = true;
           }
         }
 
         await connection.end();
-
-        if (rows && rows.length > 0) {
-          mysqlData = rows.map((r: any, idx: number) => ({
-            rank: idx + 1,
-            username: r.username || `Player${idx + 1}`,
-            value: Number(r.value || 0)
-          }));
-          connected = true;
-        }
       } catch (err) {
         console.log("MySQL ajLeaderboards query failed:", err);
       }
