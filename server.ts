@@ -674,20 +674,92 @@ app.post("/api/auth/reset-password", async (req, res) => {
   }
 });
 
-// --- MySQL & ajLeaderboards Endpoints (Secure Configuration Object Architecture) ---
-app.post("/api/mysql-test", async (req, res) => {
-  const { host, port, database, user, password } = req.body;
+// Helper to parse MySQL connection credentials from body or JDBC string
+function extractMysqlParams(input: any) {
+  let host = input.host || input.mysql_host || process.env.MYSQL_HOST || '';
+  let port = input.port || input.mysql_port || process.env.MYSQL_PORT || '3306';
+  let database = input.database || input.mysql_database || process.env.MYSQL_DATABASE || '';
+  let user = input.user || input.mysql_user || process.env.MYSQL_USER || '';
+  let password = input.password || input.mysql_password || process.env.MYSQL_PASSWORD || '';
+  const jdbc = input.jdbc_string || input.mysql_jdbc_string || input.jdbc || '';
 
-  if (!host || !database || !user) {
-    return res.status(400).json({ success: false, error: "Missing required MySQL configuration properties (host, database, user)." });
+  const strToParse = jdbc || (host.includes('://') || host.includes('@') ? host : '');
+  if (strToParse) {
+    try {
+      let cleaned = strToParse.replace(/^jdbc:/i, '');
+      if (!cleaned.includes('://')) {
+        cleaned = 'mysql://' + cleaned;
+      }
+      const url = new URL(cleaned);
+      if (url.hostname) host = url.hostname;
+      if (url.port) port = url.port;
+      if (url.pathname && url.pathname.length > 1) {
+        database = database || url.pathname.substring(1).split('?')[0];
+      }
+      if (url.username) user = user || decodeURIComponent(url.username);
+      if (url.password) password = password || decodeURIComponent(url.password);
+
+      if (url.searchParams.has('user')) user = user || url.searchParams.get('user')!;
+      if (url.searchParams.has('password')) password = password || url.searchParams.get('password')!;
+      if (url.searchParams.has('database')) database = database || url.searchParams.get('database')!;
+    } catch {
+      // ignore parse errors
+    }
   }
 
-  const [hostname, defaultPort] = host.includes(':') ? host.split(':') : [host, port || '3306'];
+  if (host && host.includes(':') && !host.includes('://')) {
+    const parts = host.split(':');
+    host = parts[0];
+    port = parts[1] || port;
+  }
+
+  return {
+    host: host.trim(),
+    port: Number(port) || 3306,
+    database: database.trim(),
+    user: user.trim(),
+    password: (password || '').trim()
+  };
+}
+
+function formatMysqlError(err: any): string {
+  if (!err) return "Unknown database error.";
+  const code = err.code || '';
+  const msg = err.message || '';
+
+  if (code === 'ER_ACCESS_DENIED_ERROR' || msg.includes('Access denied')) {
+    return "Access denied! Please check your MySQL Username and Password.";
+  }
+  if (code === 'ER_BAD_DB_ERROR' || msg.includes('Unknown database')) {
+    return "Database not found! Please check your MySQL Database Name.";
+  }
+  if (code === 'ECONNREFUSED' || msg.includes('ECONNREFUSED')) {
+    return "Connection refused by MySQL host. Ensure host and port are correct and remote MySQL connections are allowed.";
+  }
+  if (code === 'ETIMEDOUT' || msg.includes('ETIMEDOUT') || msg.includes('timeout')) {
+    return "Connection timed out. Check if port 3306 is open in your MySQL server firewall.";
+  }
+  if (code === 'ENOTFOUND' || msg.includes('ENOTFOUND')) {
+    return "Host not found! Please verify your MySQL server Host IP / domain.";
+  }
+  return msg || "Failed to connect to MySQL database.";
+}
+
+// --- MySQL & ajLeaderboards Endpoints (Secure Configuration Object Architecture) ---
+app.post("/api/mysql-test", async (req, res) => {
+  const { host, port, database, user, password } = extractMysqlParams(req.body);
+
+  if (!host || !database || !user) {
+    return res.status(400).json({
+      success: false,
+      error: "Missing required MySQL properties (host, database, user). Please enter host, database name, and username."
+    });
+  }
 
   try {
     const connection = await mysql.createConnection({
-      host: hostname,
-      port: Number(defaultPort || 3306),
+      host,
+      port,
       database,
       user,
       password: password || '',
@@ -701,9 +773,15 @@ app.post("/api/mysql-test", async (req, res) => {
     const tables = (tablesRes as any[]).map(row => Object.values(row)[0]);
     const tableSummary = tables.length > 0 ? ` Tables found: ${tables.slice(0, 10).join(', ')}${tables.length > 10 ? '...' : ''}` : ' (No tables found in database)';
 
-    return res.json({ success: true, message: `Successfully connected to MySQL database (${database} @ ${hostname}:${defaultPort})!${tableSummary}` });
+    return res.json({
+      success: true,
+      message: `Successfully connected to MySQL database (${database} @ ${host}:${port})!${tableSummary}`
+    });
   } catch (err: any) {
-    return res.status(400).json({ success: false, error: err.message || "Failed to connect to MySQL database. Check credentials." });
+    return res.status(400).json({
+      success: false,
+      error: formatMysqlError(err)
+    });
   }
 });
 

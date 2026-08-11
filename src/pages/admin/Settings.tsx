@@ -47,12 +47,12 @@ export default function AdminSettings() {
     payment_info_nagad: '',
     payment_info_rocket: '',
     payment_info_other: '',
-    mysql_host: '',
+    mysql_host: 'lemon.nyctohost.com:3306',
     mysql_port: '3306',
-    mysql_database: '',
-    mysql_user: '',
-    mysql_password: '',
-    mysql_jdbc_string: ''
+    mysql_database: 's168_Two',
+    mysql_user: 'u168_50U0Rj2EOa',
+    mysql_password: 'm@gOsxCyU2.=DaCka@THfhcf',
+    mysql_jdbc_string: 'jdbc:mysql://u168_50U0Rj2EOa:m@gOsxCyU2.=DaCka@THfhcf@lemon.nyctohost.com:3306/s168_Two'
   });
   const [voteLinks, setVoteLinks] = useState<VoteLink[]>([]);
   const [news, setNews] = useState<News[]>([]);
@@ -99,7 +99,16 @@ export default function AdminSettings() {
     }
     if (settingsData) {
       console.log('Fetched settings data:', settingsData);
-      setSettings(settingsData as Settings);
+      setSettings(prev => ({
+        ...prev,
+        ...settingsData,
+        mysql_host: settingsData.mysql_host || prev.mysql_host,
+        mysql_port: settingsData.mysql_port || prev.mysql_port,
+        mysql_database: settingsData.mysql_database || prev.mysql_database,
+        mysql_user: settingsData.mysql_user || prev.mysql_user,
+        mysql_password: settingsData.mysql_password || prev.mysql_password,
+        mysql_jdbc_string: settingsData.mysql_jdbc_string || prev.mysql_jdbc_string
+      }));
     }
 
     const { data: voteData } = await supabase.from('vote_links').select('*');
